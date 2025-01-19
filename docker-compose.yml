@@ -1,0 +1,47 @@
+services:
+  web:
+    container_name: web_server_reserbadass
+    image: nginx:1.16.1-alpine
+    working_dir: /var/www/html
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - .:/var/www/html/reserbadass
+      - .docker-local/nginx/cert:/root/ssl/:ro
+      - .docker-local/nginx/sites:/etc/nginx/conf.d/:ro
+    depends_on:
+      - php
+    networks:
+      - reserbadass-network
+
+  php:
+    container_name: php_server_reserbadass
+    build:
+      context: ./.docker-local/php
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - 9000
+    volumes:
+      - .:/var/www/html/reserbadass
+    networks:
+      - reserbadass-network
+    user: ${CURRENT_UID}
+
+  mongo:
+    container_name: mongo_server_reserbadass
+    build:
+      context: ./.docker-local/mongo
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    ports:
+      - 27017:27017
+    networks:
+      - reserbadass-network
+
+networks:
+  reserbadass-network:
